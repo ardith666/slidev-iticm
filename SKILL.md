@@ -1,11 +1,21 @@
 ---
 name: "slidev-iticm"
-description: "Footnote lihat sX, kuis self-contained, definisi eksplisit"
+description: "Tambah Alur baku deck baru konsisten P04-P05"
 ---
 
 # Slidev-ITICM
 
 Hasilkan deck HTML tunggal interaktif ala P04 untuk MK ITICM mana pun.
+
+## Alur baku deck baru
+
+1. Audit caption noref via regex `lihat s`.
+2. Definisi eksplisit di s-basis/s-metode (`X adalah ...`).
+3. Footnote `lihat sX` tiap caption kecuali s0/kuis/drill, target 0 noref.
+4. Kuis self-contained 3 soal jawab langsung tanpa `lihat sX`.
+5. Drill 3 uji kecil sebab-akibat-alasan, habis di kelas.
+6. TM fokus pertemuan + backup verbatim RPS di `<!-- dev backup -->`.
+7. Verify `grep -c '<section'`=N+1, `node --check`, lalu push skill.
 
 ## Langkah
 
@@ -19,15 +29,15 @@ Hasilkan deck HTML tunggal interaktif ala P04 untuk MK ITICM mana pun.
 8. **Nav + mobile tanpa swipe** — bottom `[⏮ Prev Next ⏭]` (`goTo(0)`/`goTo(N)`) + keyboard panah saja, dilarang swipe/touchstart/touchend agar zoom/scroll mobile bebas. Tengah `iticm.ac.id • Slide X/N` desktop hide HP, logo kanan `ml-auto` jadi tombol glosarium + badge, `@media 640px` rampingkan header/nav/bar logo `h-6`, kanan `mr-10px`. Selesai saat HP 4 tombol muat logo tidak nempel edge dan tidak ada handler sentuh.
 9. **Mermaid aman 19 pola + diagram DB** — flowchart TD vertical-first HP, sequence nama partisipan 1 kata, pesan tanpa `+ ? =`, tanpa `Note over`, label pakai `dan`. Untuk topik konversi/normalisasi tambah erDiagram / classDiagram skema tabel + flowchart alur 1NF-3NF + blok `CREATE TABLE` MySQL read-only (contoh baca, 0 eksekusi). Selesai saat 0 error `translate(undefined,NaN)`.
 10. **JS lock** — jangan global-replace teks di dalam `<script>`, validasi `node --check` tiap edit, tanpa handler swipe. Selesai saat navigasi tombol + sync jalan tanpa SyntaxError.
-11. **Kartu TM dari RPS, boleh fokus P04** — default salin teks resmi Tabel RPS (nama/sifat/isi/batas/nilai) tanpa menebak. Bila RPS generik kabur dari fokus pertemuan (misal TM1 Sub-CPMK 2,3 campur logika+representasi), boleh rewrite fokus P04 (nama fokus, min 10 IF THEN id/if/then PHP, run sampai fixed point, lampir output) + backup verbatim RPS di `<!-- dev backup ... -->`. Selesai saat dosen bisa audit ke RPS via backup.
+11. **Kartu TM dari RPS, boleh fokus pertemuan** — default salin teks resmi Tabel RPS (nama/sifat/isi/batas/nilai) tanpa menebak. Bila RPS generik kabur dari fokus pertemuan (misal TM1 Sub-CPMK 2,3 campur logika+representasi), boleh rewrite fokus pertemuan (nama fokus, min 10 IF THEN id/if/then PHP, run sampai fixed point, lampir output) + backup verbatim RPS di `<!-- dev backup ... -->`. Selesai saat dosen bisa audit ke RPS via backup.
 12. **Tombol PDF di header** — satu tombol `PDF` di header sebelah All/Full, `onclick="printPDF()"`. Fungsi `printPDF()`: `await renderAllMermaid()` dulu (lazy diagram wajib render), tambah class `all` sementara ke `body`, `window.print()`, lalu kembalikan class semula via `afterprint` + timeout cadangan. CSS `@media print`: sembunyikan `header,nav,#bar,#gloModal,#jumpWidget`, `body` bg putih, `.slide{display:block!important}` + `page-break-inside:avoid`, `pre,.mermaid,.card,.kp,.tblWrap,.chartWrap` `break-inside:avoid`. Selesai saat klik PDF cetak semua N+1 slide penuh, bukan 1 slide aktif.
-13. **Kuis + drill ringan** — kuis 3 soal self-contained: beda fakta vs aturan, arah metode 1 kalimat, stop kapan 1 kalimat; jawaban langsung di details. Drill 3 uji kecil habis di kelas, tiap uji tulis sebab-akibat-alasan (tambah fakta=muncu1 turunan, kosongkan=stop langsung, reverse=total sama). Tanpa hafal nomor aturan, tanpa buka slide lain. Selesai saat 3 menit kuis + 10 menit drill cukup.
+13. **Kuis + drill ringan** — kuis 3 soal self-contained: beda fakta vs aturan, arah metode 1 kalimat, stop kapan 1 kalimat; jawaban langsung di details. Drill 3 uji kecil habis di kelas, tiap uji tulis sebab-akibat-alasan (tambah fakta=muncul turunan, kosongkan=stop langsung, reverse=total sama). Tanpa hafal nomor aturan, tanpa buka slide lain. Selesai saat 3 menit kuis + 10 menit drill cukup.
 
 ## Pitfalls
 
 - Deck separuh bisa terlihat penuh: `index.html` berisi section konten s0–s25 tapi nol `<script>` inline → tak ada nav/glosarium/jump, `goTo` mati dan deck tak bisa dipindah. Isi konten dulu lalu kerangka = setengah deck; jangan tandai selesai sebelum cek N+1 section + `<script>`/nav/gloModal/jumpWidget ada. **Pulihkan dengan cangkok kerangka, jangan tulis ulang.** Ambil dari `</section>` terakhir sampai akhir file pada `index.html` MK lengkap sebelumnya — batas itu memuat nav + `gloModal` + `jumpWidget` + satu `<script>` (CSS kedua deck sudah identik, jadi cangkokan membawa stylenya). Sisipkan sebelum `</body>` deck separuh, lalu tukar `p04state_v1`→`pXXstate_v1`, label `P04`→`PXX`, array `GLO` dan `GLO_CATS`. Buang fungsi chart P04 (`drawCh3/11/24` + `let charts={}`) **hanya bila** deck baru tak punya `<canvas id="ch*">`. Verifikasi: `grep -c '<section'` = N+1, `node --check` pada isi `<script>`, dan DOM key yang dipakai `sync()` (`label`, `prog`, `barFill`, `glo*`, `jw*`) ada.
 - Caption tidak center meski `.caption` sudah `text-align:center` — penyebabnya `.slide p.mt-3` justify lebih spesifik; tetap pertahankan penimpa `.slide p.caption{text-align:center;text-indent:0}`, bukan menambah `!important` acak.
-- Istilah pakai dulu definisi belakangan (R4/R10, Conqueror, observasi, fixed point): wajib footnote `lihat sX` di caption kemunculan, definisi eksplisit di s-basis/s-metode; kuis/drill tetap self-contained.
+- Istilah pakai dulu definisi belakangan: wajib footnote `lihat sX` di caption kemunculan, definisi eksplisit di s-basis/s-metode; kuis/drill tetap self-contained.
 - `+` di mermaid picu `<g> translate(undefined,NaN)` — ganti `dan`.
 - `iticm.ac.id` kepotong `itic...` di HP — hide mid, kanan `ml-auto`.
 - Swipe dilarang: jangan tambah `touchstart`/`touchend`; zoom/scroll mobile prioritas, navigasi hanya tombol + keyboard.
