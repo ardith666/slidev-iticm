@@ -12,10 +12,20 @@ Hasilkan deck HTML tunggal interaktif ala P04 untuk MK ITICM mana pun.
 1. Audit caption noref via regex `lihat s`.
 2. Definisi eksplisit di s-basis/s-metode (`X adalah ...`).
 3. Footnote `lihat sX` tiap caption kecuali s0/kuis/drill, target 0 noref.
-4. Kuis self-contained 3 soal jawab langsung tanpa `lihat sX`.
+4. Kuis self-contained 3 soal tanpa `lihat sX`, tiap jawaban WAJIB di collapse `<details class="flow"><summary>Lihat Jawaban</summary>`, dilarang teks jawaban polos terlihat langsung.
 5. Drill 3 uji kecil sebab-akibat-alasan, habis di kelas.
 6. TM fokus pertemuan + backup verbatim RPS di `<!-- dev backup -->`.
 7. Verify `grep -c '<section'`=N+1, `node --check`, lalu push skill.
+8. Demo praktik kode = satu file PHP mandiri di folder deck (mis. `scheduling.php`), dipanggil dari slide via `<iframe src="…php">` — bukan chart.js raksasa di dalam deck.
+
+## Demo praktik PHP via iframe (pola P05 s25)
+
+1. **File demo mandiri** — satu `demo.php` di folder deck: `declare(strict_types=1)`, data studi kasus tetap (bukan random) didefinisikan di awal + ditampilkan sebagai tabel, logika + HTML dalam satu file, dijalankan lewat `php -S 127.0.0.1:8000 -t .` (bukan `file://`).
+2. **Struktur slide** — narasi lengkap **di atas** iframe (`<div class="narrow">` h2 border oranye + 2–3 paragraf: studi kasus, constraint, goal, g(n)/h(n)), lalu iframe `loading="lazy"` tinggi ~520px **wajib ditutup `</iframe>`** (tidak ditutup = slide aneh, konten melorot), baris catatan cara menjalankan, lalu dua tombol: **Unduh** (`demo.php?unduh=1`, endpoint unduh di header PHP pakai `readfile(__FILE__)` + `Content-Disposition` filename deskriptif `pXX-topik.php`) dan **Buka di tab baru** (`target="_blank"`).
+3. **Grafik perbandingan di dalam demo, bukan di deck** — taruh di bawah kartu hasil sebagai SVG inline buatan PHP (tanpa library JS), label nilai per batang, skala logaritmik bila angka timpang (mis. 3390 vs 7); jangan tambah `<script>` chart.js besar di bawah iframe (lambat, deck jadi berat).
+4. **Kartu hasil + rangkuman** — tiap kartu algoritma: KPI (ekspansi / penugasan / slot), tabel hasil, jejak pencarian di `<details>`, dan paragraf "kenapa eksplorasinya segitu" (`<p class="kenapa">`); paling bawah satu card rangkuman: tabel perbandingan + grafik + kesimpulan.
+5. **Jebakan performa ruang keadaan** — penugasan berurutan (hanya MK berikutnya yang dipasang slot+ruang) supaya ruang keadaan kecil; `h(n)` di-cache (`static $cache`); string jejak jangan simpan frontier penuh (pakai helper potong 4 simpul + `… +N`) — kalau tidak, BFS OOM dan A* bisa 7 detik; target render < 1s via `php -l` + `php -r '$_GET=[]; include "demo.php";'` tanpa notice.
+6. **Narasi slide vs isi demo** — paragraf di slide harus memuat angka/istilah yang sama persis dengan demo (banyak ekspansi, definisi g/h, constraint) supaya tidak ada klaim yang didemo tidak mendukung.
 
 ## Langkah
 
@@ -31,8 +41,9 @@ Hasilkan deck HTML tunggal interaktif ala P04 untuk MK ITICM mana pun.
 10. **JS lock** — jangan global-replace teks di dalam `<script>`, validasi `node --check` tiap edit, tanpa handler swipe. Selesai saat navigasi tombol + sync jalan tanpa SyntaxError.
 11. **Kartu TM dari RPS, boleh fokus pertemuan** — default salin teks resmi Tabel RPS (nama/sifat/isi/batas/nilai) tanpa menebak. Bila RPS generik kabur dari fokus pertemuan (misal TM1 Sub-CPMK 2,3 campur logika+representasi), boleh rewrite fokus pertemuan (nama fokus, min 10 IF THEN id/if/then PHP, run sampai fixed point, lampir output) + backup verbatim RPS di `<!-- dev backup ... -->`. Selesai saat dosen bisa audit ke RPS via backup.
 12. **Tombol PDF di header** — satu tombol `PDF` di header sebelah All/Full, `onclick="printPDF()"`. Fungsi `printPDF()`: `await renderAllMermaid()` dulu (lazy diagram wajib render), tambah class `all` sementara ke `body`, `window.print()`, lalu kembalikan class semula via `afterprint` + timeout cadangan. CSS `@media print`: sembunyikan `header,nav,#bar,#gloModal,#jumpWidget`, `body` bg putih, `.slide{display:block!important}` + `page-break-inside:avoid`, `pre,.mermaid,.card,.kp,.tblWrap,.chartWrap` `break-inside:avoid`. Selesai saat klik PDF cetak semua N+1 slide penuh, bukan 1 slide aktif.
-13. **Kuis + drill ringan** — kuis 3 soal self-contained: beda fakta vs aturan, arah metode 1 kalimat, stop kapan 1 kalimat; jawaban langsung di details. Drill 3 uji kecil habis di kelas, tiap uji tulis sebab-akibat-alasan (tambah fakta=muncul turunan, kosongkan=stop langsung, reverse=total sama). Tanpa hafal nomor aturan, tanpa buka slide lain. Selesai saat 3 menit kuis + 10 menit drill cukup.
+13. **Kuis + drill ringan** — kuis 3 soal self-contained: beda fakta vs aturan, arah metode 1 kalimat, stop kapan 1 kalimat; tiap jawaban WAJIB di dalam collapse `<details class="flow"><summary>Lihat Jawaban</summary>` (dilarang `<p><b>Jawab:</b>` polos), tanpa `lihat sX` di slide kuis. Drill 3 uji kecil habis di kelas, tiap uji tulis sebab-akibat-alasan (tambah fakta=muncul turunan, kosongkan=stop langsung, reverse=total sama). Tanpa hafal nomor aturan, tanpa buka slide lain. Selesai saat 3 menit kuis + 10 menit drill cukup, dan audit `grep -c '<details'` di slide kuis = 3.
 14. **Humanizer ID (blader/humanizer https://github.com/blader/humanizer)** — cek tiap narasi/keypoint/caption: kalimat tuntas subjek-predikat lengkap tanpa gantung; buang tell AI-ID (kontras "tidak hanya...tetapi", pembuka "penting untuk dicatat", "selain itu" beruntun, frasa zaman, penutup template, triad, inflasi, kata mendalam/komprehensif/holistik/optimalisasi/memfasilitasi). Istilah asing asli jangan terjemah (forward chaining, database, primary key tetap Inggris, padanan Indonesia hanya di glosarium/caption). Selesai saat 0 kalimat gantung + 0 istilah aneh.
+15. **Demo praktik PHP via iframe** — ikuti section "## Demo praktik PHP via iframe" di bawah: satu file PHP mandiri + narasi di atas iframe + tombol unduh + grafik di dalam demo. Selesai saat demo jalan mandiri lewat `php -S`, unduh menghasilkan file yang sama, dan slide hanya berisi narasi + iframe + tombol.
 
 ## Pitfalls
 
@@ -48,3 +59,5 @@ Hasilkan deck HTML tunggal interaktif ala P04 untuk MK ITICM mana pun.
 - Keypoint/bullet terlihat center padahal isi kiri — penyebabnya wadah `.kp{text-align:center}` + `ul{display:inline-block}`; wajib `.kp{text-align:left}`, `.card{text-align:left}` + `.card p{left,indent 0}` + `details.card summary{left}`, lock `#s30` inner kiri; jangan center-kan wadah teks bullet/kuis.
 - Narasi wajib paragraf justify + indent 2em; center hanya h2/caption/cover s0/penutup sN/visual; `pre/ul/ol` tetap kiri agar `PROGRAM` terbaca.
 - `node_modules` di luar www, deny `src/`, CDN load-1 lambat wajar.
+- Slide demo praktik aneh/konten melorot — iframe `</iframe>` tidak ditutup atau narasi/iframe/tombol terpisah `</div>` tak seimbang; wajib tutup iframe dan cek `count('<div')==count('</div>')` per section sebelum selesai.
+- Demo PHP berat (OOM / >5 detik) — ruang keadaan meledak (penugasan semua kombinasi sekaligus), `h(n)` dihitung ulang tiap scan, atau jejak menyimpan frontier penuh; perbaiki: penugasan berurutan, cache `static`, potong string jejak. Grafik perbandingan jangan chart.js terpisah di deck — SVG inline di dalam demo dengan skala log.
