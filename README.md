@@ -8,4 +8,4 @@ Aturan utama generate deck kuliah ITICM HTML tunggal interaktif (gaya P04) untuk
 - Catatan: Obsidian `ITICM/Slidev-ITICM-Aturan`
 
 ## Pakai
-Baca `SKILL.md`, ikuti 10 langkah + pitfalls. Butuh `obsidian-notes` untuk catatan.
+Baca `SKILL.md`, ikuti 16 langkah + pitfalls. Butuh `obsidian-notes` untuk catatan.

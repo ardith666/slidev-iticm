@@ -17,6 +17,7 @@ Hasilkan deck HTML tunggal interaktif ala P04 untuk MK ITICM mana pun.
 6. TM fokus pertemuan + backup verbatim RPS di `<!-- dev backup -->`.
 7. Verify `grep -c '<section'`=N+1, `node --check`, lalu push skill.
 8. Demo praktik kode = satu file PHP mandiri di folder deck (mis. `scheduling.php`), dipanggil dari slide via `<iframe src="…php">` — bukan chart.js raksasa di dalam deck.
+9. Deck yang punya blok kode: Prism.js + tombol Salin (lihat section "## Prism.js + tombol Salin").
 
 ## Demo praktik PHP via iframe (pola P05 s25)
 
@@ -26,6 +27,68 @@ Hasilkan deck HTML tunggal interaktif ala P04 untuk MK ITICM mana pun.
 4. **Kartu hasil + rangkuman** — tiap kartu algoritma: KPI (ekspansi / penugasan / slot), tabel hasil, jejak pencarian di `<details>`, dan paragraf "kenapa eksplorasinya segitu" (`<p class="kenapa">`); paling bawah satu card rangkuman: tabel perbandingan + grafik + kesimpulan.
 5. **Jebakan performa ruang keadaan** — penugasan berurutan (hanya MK berikutnya yang dipasang slot+ruang) supaya ruang keadaan kecil; `h(n)` di-cache (`static $cache`); string jejak jangan simpan frontier penuh (pakai helper potong 4 simpul + `… +N`) — kalau tidak, BFS OOM dan A* bisa 7 detik; target render < 1s via `php -l` + `php -r '$_GET=[]; include "demo.php";'` tanpa notice.
 6. **Narasi slide vs isi demo** — paragraf di slide harus memuat angka/istilah yang sama persis dengan demo (banyak ekspansi, definisi g/h, constraint) supaya tidak ada klaim yang didemo tidak mendukung.
+
+## Prism.js + tombol Salin (pola P04–P15)
+
+Blok kode di deck WAJIB disorot sintaks + bisa disalin satu klik. Tanpa ini mahasiswa screenshot layar, bukan menyalin teks.
+
+### 1. Markup
+
+`<pre><code class="language-sql">…</code></pre>` — satu baris, isi escape `&lt; &gt;`.
+
+| class | untuk |
+|---|---|
+| `language-sql` | SQL: SELECT/INSERT/UPDATE/DELETE/CREATE/ALTER/DROP/SHOW/EXPLAIN/GRANT/REVOKE/WITH/START TRANSACTION/BEGIN/COMMIT/ROLLBACK/TRUNCATE/CALL/DESCRIBE/USE/SET/ANALYZE/OPTIMIZE/SAVEPOINT |
+| `language-php` | PHP: `<?php`, `$var =`, `// komentar` |
+| `language-none` | teks polos: output `mysql>`, daftar pustaka, path, hasil hitung |
+
+Prism core **tidak** punya grammar `none` → blok dibiarkan polos (aman, tanpa error). Jangan asal tebak `language-sql` untuk blok teks.
+
+### 2. Head — 7 baris, sisipkan SEBELUM `<style>` deck
+
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markup.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-clike.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markup-templating.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-php.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-sql.min.js"></script>
+```
+
+`prism-php` butuh `prism-markup-templating` (isi `<?php ?>`), `prism-sql` butuh `prism-clike`. Urutan: core → markup → clike → markup-templating → php → sql.
+
+### 3. CSS — sisipkan setelah `<style>` deck (tema Prism harus kalah spesifisitas)
+
+```css
+pre{position:relative}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit}
+pre[class*=language-]{background:#2d2d3a;padding:14px;margin:12px auto;max-width:720px;border-radius:10px;font-size:.82rem;line-height:1.45}
+.codeBtn{position:absolute;top:6px;right:6px;z-index:2;background:#1a1a2e;color:#c0c5d0;border:1px solid #4a4a60;border-radius:6px;font-size:.68rem;padding:2px 8px;cursor:pointer;opacity:0;transition:opacity .18s}
+pre:hover .codeBtn,.codeBtn:focus{opacity:1}
+.codeBtn:hover{background:#e86c00;border-color:#e86c00;color:#fff}
+@media (hover:none){.codeBtn{opacity:1}}
+@media print{.codeBtn{display:none!important}}
+```
+
+### 4. JS — sisipkan di awal `<script>` inline deck
+
+```js
+function kodeTeks(pre){var c=pre.querySelector('code');return c?c.textContent:pre.textContent;}
+function salinLama(t,ok){var ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.left='-9999px';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');ok();}catch(e){}document.body.removeChild(ta);}
+function salinTeks(t,btn){var ok=function(){btn.textContent='Tersalin';setTimeout(function(){btn.textContent='Salin';},1400);};if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok,function(){salinLama(t,ok);});}else{salinLama(t,ok);}}
+document.querySelectorAll('pre').forEach(function(pre){if(!pre.querySelector('code'))return;var b=document.createElement('button');b.className='codeBtn';b.type='button';b.textContent='Salin';b.setAttribute('aria-label','Salin kode');b.onclick=function(e){e.preventDefault();salinTeks(kodeTeks(pre),b);};pre.appendChild(b);});
+```
+
+### Jebakan Prism
+
+- Tema Prism menimpa `<pre>`: `pre[class*=language-]{padding:1em;margin:.5em 0}` mengalahkan `pre{padding:14px;margin:12px auto}` deck (spesifisitas lebih tinggi) → wajib baris override `pre[class*=language-]{…}` di atas.
+- `pre` wajib `position:relative`, tanpa itu tombol Salin melayang jauh (mengikuti presisi elemen terdekat).
+- Tanpa `<code>` di dalam `<pre>`, tombol tidak muncul — script cari `pre.querySelector('code')`.
+- `file://` tidak punya `navigator.clipboard` → fallback `document.execCommand('copy')` wajib ada.
+- `@media print` sembunyikan tombol; `@media (hover:none)` tombol selalu terlihat (HP).
+- Prism saat runtime menambah class `language-x` juga ke `<pre>` (bukan cuma `<code>`) — jangan hard-code class itu.
+- Deck tanpa blok kode (P01–P03, P16) tidak perlu CDN Prism sama sekali.
 
 ## Langkah
 
@@ -44,6 +107,7 @@ Hasilkan deck HTML tunggal interaktif ala P04 untuk MK ITICM mana pun.
 13. **Kuis + drill ringan** — kuis 3 soal self-contained: beda fakta vs aturan, arah metode 1 kalimat, stop kapan 1 kalimat; tiap jawaban WAJIB di dalam collapse `<details class="flow"><summary>Lihat Jawaban</summary>` (dilarang `<p><b>Jawab:</b>` polos), tanpa `lihat sX` di slide kuis. Drill 3 uji kecil habis di kelas, tiap uji tulis sebab-akibat-alasan (tambah fakta=muncul turunan, kosongkan=stop langsung, reverse=total sama). Tanpa hafal nomor aturan, tanpa buka slide lain. Selesai saat 3 menit kuis + 10 menit drill cukup, dan audit `grep -c '<details'` di slide kuis = 3.
 14. **Humanizer ID (blader/humanizer https://github.com/blader/humanizer)** — cek tiap narasi/keypoint/caption: kalimat tuntas subjek-predikat lengkap tanpa gantung; buang tell AI-ID (kontras "tidak hanya...tetapi", pembuka "penting untuk dicatat", "selain itu" beruntun, frasa zaman, penutup template, triad, inflasi, kata mendalam/komprehensif/holistik/optimalisasi/memfasilitasi). Istilah asing asli jangan terjemah (forward chaining, database, primary key tetap Inggris, padanan Indonesia hanya di glosarium/caption). Selesai saat 0 kalimat gantung + 0 istilah aneh.
 15. **Demo praktik PHP via iframe** — ikuti section "## Demo praktik PHP via iframe" di bawah: satu file PHP mandiri + narasi di atas iframe + tombol unduh + grafik di dalam demo. Selesai saat demo jalan mandiri lewat `php -S`, unduh menghasilkan file yang sama, dan slide hanya berisi narasi + iframe + tombol.
+16. **Blok kode: Prism.js + tombol Salin** — deck yang punya blok kode WAJIB pakai Prism.js + tombol Salin, ikuti section "## Prism.js + tombol Salin" di bawah. Markup `<pre><code class="language-sql">` / `language-php` / `language-none`, 7 baris CDN Prism di head sebelum `<style>`, CSS override + JS tombol salin. Selesai saat `grep -c 'language-' index.html` = jumlah blok kode, tiap `<pre>` punya `<button class="codeBtn">`, dan blok SQL/PHP benar-benar ter-sorot warna.
 
 ## Pitfalls
 
@@ -64,3 +128,4 @@ Hasilkan deck HTML tunggal interaktif ala P04 untuk MK ITICM mana pun.
 - Demo PHP fatal `TypeError: Argument 1 passed to … must be of the type string, bool given` saat diakses lewat `index.php?r=slide-stream` — controller `include` file di dalam method, jadi variabel top-level bersifat lokal sementara fungsi demo ber-`global` membaca `$GLOBALS` kosong: semua kandidat dianggap tidak valid, `jalur` kosong, `end($jalur)` = `false`. Perbaiki: setelah definisi data, salin `$GLOBALS['matakuliah']/$GLOBALS['ruang']/$GLOBALS['slot']` (atau jangan pakai `global`), dan bungkus `slotAkhir($r)` = `0` bila `jalur` kosong. Uji wajib dengan PHP 8.5 (phpBro: `bin/php/8.5.8/php`, bukan php 7 CLI homebrew): `php -r 'function s($f){ob_start();include $f;return ob_get_clean();} $_GET=[]; echo strlen(s("demo.php"));'`.
 - Graf SVG terpotong di bawah — tinggi `viewBox` dihitung dari jumlah baris per kolom kedalaman, dan penghitung baris salah bila penanda awal `$row[$d]=0` tidak pernah di-increment (node pertama tiap kolom hilang dari hitungan; DFS bisa jadi `viewBox` 20px untuk isi 42px). Pakai `$rIdx = $row[$d] ?? 0; $row[$d] = $rIdx + 1;` dan tinggi `20 + maxRow*34 + (terpotong ? 14 : 4)`. Verifikasi: `viewBox H >= max(rectY + rectH) + 4` untuk tiap SVG.
 - Perubahan demo tak terlihat setelah edit — stream mengirim `Cache-Control: private, max-age=3600`; minta hard refresh (Cmd+Shift+R) sebelum menyimpulkan masih bug.
+- Blok kode tanpa Prism atau tombol Salin — deck tetap "jalan" tapi mahasiswa screenshot layar; atau `<pre>` polos tanpa `<code>` → tombol Salin tidak pernah muncul (script cari `pre.querySelector('code')`); atau tema Prism menimpa `pre` (margin/padding hilang) karena lupa baris override `pre[class*=language-]{…}`.
