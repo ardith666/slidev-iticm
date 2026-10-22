@@ -40,7 +40,8 @@ Blok kode di deck WAJIB disorot sintaks + bisa disalin satu klik. Tanpa ini maha
 |---|---|
 | `language-sql` | SQL: SELECT/INSERT/UPDATE/DELETE/CREATE/ALTER/DROP/SHOW/EXPLAIN/GRANT/REVOKE/WITH/START TRANSACTION/BEGIN/COMMIT/ROLLBACK/TRUNCATE/CALL/DESCRIBE/USE/SET/ANALYZE/OPTIMIZE/SAVEPOINT |
 | `language-php` | PHP: `<?php`, `$var =`, `// komentar` |
-| `language-none` | teks polos: output `mysql>`, daftar pustaka, path, hasil hitung |
+| `language-markup` | HTML: `&lt;form`, `&lt;input`, `&lt;button` (grammar `markup` sudah ikut CDN) |
+| `language-none` | teks polos: output `mysql>`, daftar pustaka, path, hasil hitung, pseudocode `PROGRAM/DEKLARASI/ISI` |
 
 Prism core **tidak** punya grammar `none` → blok dibiarkan polos (aman, tanpa error). Jangan asal tebak `language-sql` untuk blok teks.
 
@@ -64,6 +65,7 @@ Prism core **tidak** punya grammar `none` → blok dibiarkan polos (aman, tanpa 
 pre{position:relative}
 pre code{background:none;padding:0;border-radius:0;font-size:inherit}
 pre[class*=language-]{background:#2d2d3a;padding:14px;margin:12px auto;max-width:720px;border-radius:10px;font-size:.82rem;line-height:1.45}
+pre code[class*=language-]{color:inherit}
 .codeBtn{position:absolute;top:6px;right:6px;z-index:2;background:#1a1a2e;color:#c0c5d0;border:1px solid #4a4a60;border-radius:6px;font-size:.68rem;padding:2px 8px;cursor:pointer;opacity:0;transition:opacity .18s}
 pre:hover .codeBtn,.codeBtn:focus{opacity:1}
 .codeBtn:hover{background:#e86c00;border-color:#e86c00;color:#fff}
@@ -88,7 +90,8 @@ document.querySelectorAll('pre').forEach(function(pre){if(!pre.querySelector('co
 - `file://` tidak punya `navigator.clipboard` → fallback `document.execCommand('copy')` wajib ada.
 - `@media print` sembunyikan tombol; `@media (hover:none)` tombol selalu terlihat (HP).
 - Prism saat runtime menambah class `language-x` juga ke `<pre>` (bukan cuma `<code>`) — jangan hard-code class itu.
-- Deck tanpa blok kode (P01–P03, P16) tidak perlu CDN Prism sama sekali.
+- Blok pseudocode putih (style `background:#fff` + border-kiri orange) + `language-none` → tema Prism bikin teks `#ccc` di atas putih = tidak terbaca. Wajib baris `pre code[class*=language-]{color:inherit}` (spesifisitas `0,1,2` > `code[class*=language-]` `0,1,1`).
+- Deck tanpa blok kode apa pun (cek `grep -c '<code class="language-' index.html` = 0) tidak perlu CDN Prism sama sekali — P01–P03 + P16 di Basis Data, P04 + P08 di Algoritma.
 
 ## Langkah
 
@@ -107,7 +110,7 @@ document.querySelectorAll('pre').forEach(function(pre){if(!pre.querySelector('co
 13. **Kuis + drill ringan** — kuis 3 soal self-contained: beda fakta vs aturan, arah metode 1 kalimat, stop kapan 1 kalimat; tiap jawaban WAJIB di dalam collapse `<details class="flow"><summary>Lihat Jawaban</summary>` (dilarang `<p><b>Jawab:</b>` polos), tanpa `lihat sX` di slide kuis. Drill 3 uji kecil habis di kelas, tiap uji tulis sebab-akibat-alasan (tambah fakta=muncul turunan, kosongkan=stop langsung, reverse=total sama). Tanpa hafal nomor aturan, tanpa buka slide lain. Selesai saat 3 menit kuis + 10 menit drill cukup, dan audit `grep -c '<details'` di slide kuis = 3.
 14. **Humanizer ID (blader/humanizer https://github.com/blader/humanizer)** — cek tiap narasi/keypoint/caption: kalimat tuntas subjek-predikat lengkap tanpa gantung; buang tell AI-ID (kontras "tidak hanya...tetapi", pembuka "penting untuk dicatat", "selain itu" beruntun, frasa zaman, penutup template, triad, inflasi, kata mendalam/komprehensif/holistik/optimalisasi/memfasilitasi). Istilah asing asli jangan terjemah (forward chaining, database, primary key tetap Inggris, padanan Indonesia hanya di glosarium/caption). Selesai saat 0 kalimat gantung + 0 istilah aneh.
 15. **Demo praktik PHP via iframe** — ikuti section "## Demo praktik PHP via iframe" di bawah: satu file PHP mandiri + narasi di atas iframe + tombol unduh + grafik di dalam demo. Selesai saat demo jalan mandiri lewat `php -S`, unduh menghasilkan file yang sama, dan slide hanya berisi narasi + iframe + tombol.
-16. **Blok kode: Prism.js + tombol Salin** — deck yang punya blok kode WAJIB pakai Prism.js + tombol Salin, ikuti section "## Prism.js + tombol Salin" di bawah. Markup `<pre><code class="language-sql">` / `language-php` / `language-none`, 7 baris CDN Prism di head sebelum `<style>`, CSS override + JS tombol salin. Selesai saat `grep -c 'language-' index.html` = jumlah blok kode, tiap `<pre>` punya `<button class="codeBtn">`, dan blok SQL/PHP benar-benar ter-sorot warna.
+16. **Blok kode: Prism.js + tombol Salin** — deck yang punya blok kode WAJIB pakai Prism.js + tombol Salin, ikuti section "## Prism.js + tombol Salin" di bawah. Markup `<pre><code class="language-sql">` / `language-php` / `language-markup` / `language-none`, 7 baris CDN Prism di head sebelum `<style>`, CSS override + JS tombol salin. Selesai saat `grep -c '<code class="language-' index.html` = jumlah blok kode, tiap `<pre>` punya `<button class="codeBtn">`, dan blok SQL/PHP/HTML benar-benar ter-sorot warna. Suntik massal deck yang sudah jadi: `slidev/_build/prism_patch.py` (idempoten, dek-tolerant, skip deck tanpa blok kode).
 
 ## Pitfalls
 
